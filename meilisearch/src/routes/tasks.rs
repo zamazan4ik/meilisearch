@@ -254,7 +254,7 @@ async fn cancel_tasks(
     Ok(HttpResponse::Ok().json(task))
 }
 
-/// Delete tasks.
+/// Delete tasks
 ///
 /// Delete [tasks](https://docs.meilisearch.com/learn/advanced/asynchronous_operations.html) on filter
 #[utoipa::path(

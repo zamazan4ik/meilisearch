@@ -34,8 +34,6 @@ pub mod tasks;
 #[derive(OpenApi)]
 #[openapi(
      nest((path = "/tasks", api = tasks::TaskApi) ),
-    // paths(get_todos, create_todo, delete_todo, get_todo_by_id, update_todo, search_todos),
-    // components(schemas(TaskId))
 )]
 pub struct MeilisearchApi;
 
