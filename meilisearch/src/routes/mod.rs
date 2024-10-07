@@ -8,7 +8,6 @@ use actix_web::web::Data;
 use actix_web::{web, HttpRequest, HttpResponse};
 use index_scheduler::IndexScheduler;
 use meilisearch_auth::AuthController;
-use meilisearch_types::deserr::query_params::Param;
 use meilisearch_types::error::{Code, ResponseError};
 use meilisearch_types::settings::{Settings, Unchecked};
 use meilisearch_types::tasks::{Kind, Status, Task, TaskId};
@@ -16,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use tracing::debug;
 use utoipa::OpenApi;
+use utoipa_rapidoc::RapiDoc;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
 const PAGINATION_DEFAULT_LIMIT: usize = 20;
@@ -27,6 +27,7 @@ pub mod indexes;
 mod logs;
 mod metrics;
 mod multi_search;
+mod open_api_utils;
 mod snapshot;
 mod swap_indexes;
 pub mod tasks;
@@ -42,6 +43,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 
     cfg.service(web::scope("/tasks").configure(tasks::configure))
         .service(Scalar::with_url("/scalar", openapi.clone()))
+        .service(RapiDoc::with_openapi("/api-docs/openapi.json", openapi).path("/rapidoc"))
         .service(web::resource("/health").route(web::get().to(get_health)))
         .service(web::scope("/logs").configure(logs::configure))
         .service(web::scope("/keys").configure(api_key::configure))

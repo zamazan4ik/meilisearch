@@ -426,7 +426,7 @@ impl std::error::Error for ParseTaskStatusError {}
 /// The type of the task.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Sequence, ToSchema)]
 #[serde(rename_all = "camelCase")]
-#[schema(rename_all = "camelCase", example = json!(Kind::DocumentAdditionOrUpdate))]
+#[schema(rename_all = "camelCase", example = json!(enum_iterator::all::<Kind>().collect::<Vec<_>>()))]
 pub enum Kind {
     DocumentAdditionOrUpdate,
     DocumentEdition,
@@ -443,6 +443,10 @@ pub enum Kind {
 }
 
 impl Kind {
+    pub fn all_variants() -> Vec<Self> {
+        enum_iterator::all::<Kind>().collect()
+    }
+
     pub fn related_to_one_index(&self) -> bool {
         match self {
             Kind::DocumentAdditionOrUpdate

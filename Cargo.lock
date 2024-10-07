@@ -3456,6 +3456,7 @@ dependencies = [
  "url",
  "urlencoding",
  "utoipa",
+ "utoipa-rapidoc",
  "utoipa-scalar",
  "uuid",
  "wiremock",
@@ -5866,13 +5867,26 @@ dependencies = [
  "quote",
  "regex",
  "syn 2.0.60",
+ "uuid",
+]
+
+[[package]]
+name = "utoipa-rapidoc"
+version = "4.0.1-beta.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c836d406d590721b89f572cb0379479fcfbe27f31ca65c0775265a1b9026dd34"
+dependencies = [
+ "actix-web",
+ "serde",
+ "serde_json",
+ "utoipa",
 ]
 
 [[package]]
 name = "utoipa-scalar"
-version = "0.2.0-alpha.0"
+version = "0.2.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c851bc855ea797c92d61de0cd4d36195c01657bc92e42a02fd1373897d6bfe7"
+checksum = "bc86065a210b8540e46d15e0844765d1d14eec7fd6221c2b0de8f6edde990648"
 dependencies = [
  "actix-web",
  "serde",

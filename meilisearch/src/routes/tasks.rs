@@ -23,6 +23,7 @@ use time::{Date, Duration, OffsetDateTime, Time};
 use tokio::task;
 use utoipa::{IntoParams, OpenApi, ToSchema};
 
+use super::open_api_utils::OpenApiAuth;
 use super::{get_task_id, is_dry_run, SummarizedTaskView};
 use crate::analytics::Analytics;
 use crate::extractors::authentication::policies::*;
@@ -34,10 +35,14 @@ const DEFAULT_LIMIT: u32 = 20;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_tasks, delete_tasks),
-    info(
-        title = "The tasks route gives information about the progress of the [asynchronous operations](https://docs.meilisearch.com/learn/advanced/asynchronous_operations.html)."
-    ),
+    paths(get_tasks, delete_tasks, cancel_tasks, get_task),
+    tags((
+        name = "Tasks",
+        description = "The tasks route gives information about the progress of the [asynchronous operations](https://docs.meilisearch.com/learn/advanced/asynchronous_operations.html).",
+        external_docs(url = "https://www.meilisearch.com/docs/reference/api/tasks"),
+        
+    )),
+    modifiers(&OpenApiAuth),
     components(schemas(AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings))
 )]
 pub struct TaskApi;
@@ -67,38 +72,38 @@ pub struct TasksFilterQuery {
 
     /// Permits to filter tasks by their uid. By default, when the uids query parameter is not set, all task uids are returned. It's possible to specify several uids by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskUids>)]
-    #[param(required = false, value_type = Option<Vec<u32>>, example = json!([231, 423, 598]))]
+    #[param(required = false, value_type = Option<Vec<u32>>, example = json!([231, 423, 598, "*"]))]
     pub uids: OptionStarOrList<u32>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskCanceledBy>)]
-    #[param(required = false, value_type = Option<Vec<u32>>, example = json!([374]))]
+    #[param(required = false, value_type = Option<Vec<u32>>, example = json!([374, "*"]))]
     pub canceled_by: OptionStarOrList<u32>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskTypes>)]
-    #[param(required = false, value_type = Option<Vec<Kind>>, example = json!([Kind::DocumentDeletion]))]
+    #[param(required = false, value_type = Option<Vec<String>>, example = json!([Kind::DocumentAdditionOrUpdate, "*"]))]
     pub types: OptionStarOrList<Kind>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskStatuses>)]
-    #[param(required = false, value_type = Option<Vec<Status>>, example = json!([Status::Succeeded, Status::Failed, Status::Canceled]))]
+    #[param(required = false, value_type = Option<Vec<Status>>, example = json!([Status::Succeeded, Status::Failed, Status::Canceled, Status::Enqueued, Status::Processing, "*"]))]
     pub statuses: OptionStarOrList<Status>,
     #[deserr(default, error = DeserrQueryParamError<InvalidIndexUid>)]
-    #[param(required = false, value_type = Option<Vec<String>>, example = json!(["movies", "theater"]))]
+    #[param(required = false, value_type = Option<Vec<String>>, example = json!(["movies", "theater", "*"]))]
     pub index_uids: OptionStarOrList<IndexUid>,
 
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterEnqueuedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_enqueued_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeEnqueuedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_enqueued_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterStartedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_started_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeStartedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_started_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterFinishedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_finished_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeFinishedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_finished_at: OptionStarOr<OffsetDateTime>,
 }
 
@@ -148,38 +153,38 @@ impl TaskDeletionOrCancelationQuery {
 #[into_params(rename_all = "camelCase", parameter_in = Query)]
 pub struct TaskDeletionOrCancelationQuery {
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskUids>)]
-    #[param(required = false, value_type = Option<Vec<u32>>, example = json!([231, 423, 598]))]
+    #[param(required = false, value_type = Option<Vec<u32>>, example = json!([231, 423, 598, "*"]))]
     pub uids: OptionStarOrList<u32>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskCanceledBy>)]
-    #[param(required = false, value_type = Option<Vec<u32>>, example = json!([374]))]
+    #[param(required = false, value_type = Option<Vec<u32>>, example = json!([374, "*"]))]
     pub canceled_by: OptionStarOrList<u32>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskTypes>)]
-    #[param(required = false, value_type = Option<Vec<Kind>>, example = json!([Kind::DocumentDeletion]))]
+    #[param(required = false, value_type = Option<Vec<Kind>>, example = json!([Kind::DocumentDeletion, "*"]))]
     pub types: OptionStarOrList<Kind>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskStatuses>)]
-    #[param(required = false, value_type = Option<Vec<Status>>, example = json!([Status::Succeeded, Status::Failed, Status::Canceled]))]
+    #[param(required = false, value_type = Option<Vec<Status>>, example = json!([Status::Succeeded, Status::Failed, Status::Canceled, "*"]))]
     pub statuses: OptionStarOrList<Status>,
     #[deserr(default, error = DeserrQueryParamError<InvalidIndexUid>)]
-    #[param(required = false, value_type = Option<Vec<String>>, example = json!(["movies", "theater"]))]
+    #[param(required = false, value_type = Option<Vec<String>>, example = json!(["movies", "theater", "*"]))]
     pub index_uids: OptionStarOrList<IndexUid>,
 
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterEnqueuedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_enqueued_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeEnqueuedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_enqueued_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterStartedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_started_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeStartedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_started_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterFinishedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_finished_at: OptionStarOr<OffsetDateTime>,
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeFinishedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
-    #[param(required = false, value_type = Option<String>, example = json!("2024-08-08_16:37:09.971Z"))]
+    #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_finished_at: OptionStarOr<OffsetDateTime>,
 }
 
@@ -203,6 +208,24 @@ impl TaskDeletionOrCancelationQuery {
     }
 }
 
+/// Cancel tasks
+///
+/// Cancel enqueued and/or processing [tasks](https://www.meilisearch.com/docs/learn/async/asynchronous_operations)
+#[utoipa::path(
+    post,
+    path = "/cancel",
+    tag = "Tasks",
+    params(TaskDeletionOrCancelationQuery),
+    responses(
+        (status = 200, description = "Task successfully enqueued", body = SummarizedTaskView, content_type = "application/json", example = json!({
+          "taskUid": 147,
+          "indexUid": null,
+          "status": "enqueued",
+          "type": "taskDeletion",
+          "enqueuedAt": "2024-08-08T17:05:55.791772Z"
+        }))
+    )
+)]
 async fn cancel_tasks(
     index_scheduler: GuardedData<ActionPolicy<{ actions::TASKS_CANCEL }>, Data<IndexScheduler>>,
     params: AwebQueryParameter<TaskDeletionOrCancelationQuery, DeserrQueryParamError>,
@@ -260,6 +283,7 @@ async fn cancel_tasks(
 #[utoipa::path(
     delete,
     path = "",
+    tag = "Tasks",
     params(TaskDeletionOrCancelationQuery),
     responses(
         (status = 200, description = "Task successfully enqueued", body = SummarizedTaskView, content_type = "application/json", example = json!({
@@ -333,12 +357,15 @@ pub struct AllTasks {
     next: Option<u32>,
 }
 
+
 /// Get all tasks
 ///
 /// Get all [tasks](https://docs.meilisearch.com/learn/advanced/asynchronous_operations.html)
 #[utoipa::path(
     get,
     path = "",
+    tag = "Tasks",
+    security(("Bearer" = ["tasks.get", "tasks.*", "*"])),
     params(TasksFilterQuery),
     responses(
         (status = 200, description = "Get all tasks", body = AllTasks, content_type = "application/json", example = json!({
@@ -394,6 +421,52 @@ async fn get_tasks(
     Ok(HttpResponse::Ok().json(tasks))
 }
 
+/// Get a task
+///
+/// Get a [task](https://www.meilisearch.com/docs/learn/async/asynchronous_operations)
+#[utoipa::path(
+    get,
+    path = "/{taskUid}",
+    tag = "Tasks",
+    security(("Bearer" = ["tasks.get", "tasks.*", "*"])),
+    params(("taskUid", format = UInt32, example = 0, description = "The task identifier", nullable = false)),
+    responses(
+        (status = 200, description = "Task successfully retrieved", body = TaskView, content_type = "application/json", example = json!(
+            {
+                "uid": 1,
+                "indexUid": "movies",
+                "status": "succeeded",
+                "type": "documentAdditionOrUpdate",
+                "canceledBy": null,
+                "details": {
+                    "receivedDocuments": 79000,
+                    "indexedDocuments": 79000
+                },
+                "error": null,
+                "duration": "PT1S",
+                "enqueuedAt": "2021-01-01T09:39:00.000000Z",
+                "startedAt": "2021-01-01T09:39:01.000000Z",
+                "finishedAt": "2021-01-01T09:39:02.000000Z"
+            }
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
+        (status = 404, description = "The task uid does not exists", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "Task :taskUid not found.",
+                "code": "task_not_found",
+                "type": "invalid_request",
+                "link": "https://docs.meilisearch.com/errors/#task_not_found"
+            }
+        ))
+    )
+)]
 async fn get_task(
     index_scheduler: GuardedData<ActionPolicy<{ actions::TASKS_GET }>, Data<IndexScheduler>>,
     task_uid: web::Path<String>,
