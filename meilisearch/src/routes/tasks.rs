@@ -5,15 +5,11 @@ use deserr::Deserr;
 use index_scheduler::{IndexScheduler, Query, TaskId};
 use meilisearch_types::deserr::query_params::Param;
 use meilisearch_types::deserr::DeserrQueryParamError;
-use meilisearch_types::error::{deserr_codes::*, Code, ErrorType};
+use meilisearch_types::error::deserr_codes::*;
 use meilisearch_types::error::{InvalidTaskDateError, ResponseError};
 use meilisearch_types::index_uid::IndexUid;
-use meilisearch_types::settings::{
-    Checked, FacetingSettings, MinWordSizeTyposSetting, PaginationSettings, Settings, TypoSettings,
-    Unchecked,
-};
 use meilisearch_types::star_or::{OptionStarOr, OptionStarOrList};
-use meilisearch_types::task_view::{DetailsView, TaskView};
+use meilisearch_types::task_view::TaskView;
 use meilisearch_types::tasks::{Kind, KindWithContent, Status};
 use serde::Serialize;
 use serde_json::json;
@@ -23,7 +19,7 @@ use time::{Date, Duration, OffsetDateTime, Time};
 use tokio::task;
 use utoipa::{IntoParams, OpenApi, ToSchema};
 
-use super::open_api_utils::OpenApiAuth;
+// use super::open_api_utils::OpenApiAuth;
 use super::{get_task_id, is_dry_run, SummarizedTaskView};
 use crate::analytics::Analytics;
 use crate::extractors::authentication::policies::*;
@@ -32,6 +28,29 @@ use crate::extractors::sequential_extractor::SeqHandler;
 use crate::Opt;
 
 const DEFAULT_LIMIT: u32 = 20;
+
+
+#[derive(Debug, Serialize)]
+pub struct OpenApiAuth;
+
+impl utoipa::Modify for OpenApiAuth {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(schema) = openapi.components.as_mut() {
+            schema.add_security_scheme(
+                "Bearer",
+                utoipa::openapi::security::SecurityScheme::Http(
+                    utoipa::openapi::security::HttpBuilder::new()
+                        .scheme(utoipa::openapi::security::HttpAuthScheme::Bearer)
+                        .bearer_format("Uuidv4, string or JWT")
+                        .description(Some(
+"An API key is a token that you provide when making API calls. Include the token in a header parameter called `Authorization`.
+Example: `Authorization: Bearer 8fece4405662dd830e4cb265e7e047aab2e79672a760a12712d2a263c9003509`"))
+                        .build(),
+                ),
+            );
+        }
+    }
+}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -42,8 +61,6 @@ const DEFAULT_LIMIT: u32 = 20;
         external_docs(url = "https://www.meilisearch.com/docs/reference/api/tasks"),
         
     )),
-    modifiers(&OpenApiAuth),
-    components(schemas(Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
 )]
 pub struct TaskApi;
 

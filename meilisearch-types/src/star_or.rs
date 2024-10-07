@@ -6,7 +6,6 @@ use std::str::FromStr;
 use deserr::{DeserializeError, Deserr, MergeWithError, ValueKind};
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use utoipa::{IntoParams, ToSchema};
 
 use crate::deserr::query_params::FromQueryParameter;
 

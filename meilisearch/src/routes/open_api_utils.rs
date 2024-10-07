@@ -2,7 +2,7 @@ use serde::Serialize;
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 
 #[derive(Debug, Serialize)]
-pub(super) struct OpenApiAuth;
+pub struct OpenApiAuth;
 
 impl utoipa::Modify for OpenApiAuth {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {

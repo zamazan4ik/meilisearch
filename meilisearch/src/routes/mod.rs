@@ -8,8 +8,16 @@ use actix_web::web::Data;
 use actix_web::{web, HttpRequest, HttpResponse};
 use index_scheduler::IndexScheduler;
 use meilisearch_auth::AuthController;
+use meilisearch_types::error::ErrorType;
 use meilisearch_types::error::{Code, ResponseError};
+use meilisearch_types::settings::Checked;
+use meilisearch_types::settings::FacetingSettings;
+use meilisearch_types::settings::MinWordSizeTyposSetting;
+use meilisearch_types::settings::PaginationSettings;
+use meilisearch_types::settings::TypoSettings;
 use meilisearch_types::settings::{Settings, Unchecked};
+use meilisearch_types::task_view::DetailsView;
+use meilisearch_types::task_view::TaskView;
 use meilisearch_types::tasks::{Kind, Status, Task, TaskId};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -18,6 +26,9 @@ use utoipa::OpenApi;
 use utoipa::ToSchema;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
+
+use self::open_api_utils::OpenApiAuth;
+use self::tasks::AllTasks;
 
 const PAGINATION_DEFAULT_LIMIT: usize = 20;
 
@@ -35,7 +46,9 @@ pub mod tasks;
 
 #[derive(OpenApi)]
 #[openapi(
-     nest((path = "/tasks", api = tasks::TaskApi) ),
+    nest((path = "/tasks", api = tasks::TaskApi) ),
+    modifiers(&OpenApiAuth),
+    components(schemas(Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
 )]
 pub struct MeilisearchApi;
 
