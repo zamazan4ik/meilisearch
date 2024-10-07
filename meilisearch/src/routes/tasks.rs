@@ -69,39 +69,48 @@ pub struct TasksFilterQuery {
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskFrom>)]
     #[param(required = false, value_type = Option<u32>, example = 12421)]
     pub from: Option<Param<TaskId>>,
-
     /// Permits to filter tasks by their uid. By default, when the uids query parameter is not set, all task uids are returned. It's possible to specify several uids by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskUids>)]
     #[param(required = false, value_type = Option<Vec<u32>>, example = json!([231, 423, 598, "*"]))]
     pub uids: OptionStarOrList<u32>,
+    /// Permits to filter tasks using the uid of the task that canceled them. It's possible to specify several task uids by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskCanceledBy>)]
     #[param(required = false, value_type = Option<Vec<u32>>, example = json!([374, "*"]))]
     pub canceled_by: OptionStarOrList<u32>,
+    /// Permits to filter tasks by their related type. By default, when `types` query parameter is not set, all task types are returned. It's possible to specify several types by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskTypes>)]
     #[param(required = false, value_type = Option<Vec<String>>, example = json!([Kind::DocumentAdditionOrUpdate, "*"]))]
     pub types: OptionStarOrList<Kind>,
+    /// Permits to filter tasks by their status. By default, when `statuses` query parameter is not set, all task statuses are returned. It's possible to specify several statuses by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskStatuses>)]
     #[param(required = false, value_type = Option<Vec<Status>>, example = json!([Status::Succeeded, Status::Failed, Status::Canceled, Status::Enqueued, Status::Processing, "*"]))]
     pub statuses: OptionStarOrList<Status>,
+    /// Permits to filter tasks by their related index. By default, when `indexUids` query parameter is not set, the tasks of all the indexes are returned. It is possible to specify several indexes by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidIndexUid>)]
     #[param(required = false, value_type = Option<Vec<String>>, example = json!(["movies", "theater", "*"]))]
     pub index_uids: OptionStarOrList<IndexUid>,
 
+    /// Permits to filter tasks based on their enqueuedAt time. Matches tasks enqueued after the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterEnqueuedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_enqueued_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their enqueuedAt time. Matches tasks enqueued before the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeEnqueuedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_enqueued_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their startedAt time. Matches tasks started after the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterStartedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_started_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their startedAt time. Matches tasks started before the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeStartedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_started_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their finishedAt time. Matches tasks finished after the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterFinishedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_finished_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their finishedAt time. Matches tasks finished before the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeFinishedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_finished_at: OptionStarOr<OffsetDateTime>,
@@ -152,37 +161,48 @@ impl TaskDeletionOrCancelationQuery {
 #[deserr(error = DeserrQueryParamError, rename_all = camelCase, deny_unknown_fields)]
 #[into_params(rename_all = "camelCase", parameter_in = Query)]
 pub struct TaskDeletionOrCancelationQuery {
+    /// Permits to filter tasks by their uid. By default, when the `uids` query parameter is not set, all task uids are returned. It's possible to specify several uids by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskUids>)]
     #[param(required = false, value_type = Option<Vec<u32>>, example = json!([231, 423, 598, "*"]))]
     pub uids: OptionStarOrList<u32>,
+    /// Permits to filter tasks using the uid of the task that canceled them. It's possible to specify several task uids by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskCanceledBy>)]
     #[param(required = false, value_type = Option<Vec<u32>>, example = json!([374, "*"]))]
     pub canceled_by: OptionStarOrList<u32>,
+    /// Permits to filter tasks by their related type. By default, when `types` query parameter is not set, all task types are returned. It's possible to specify several types by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskTypes>)]
     #[param(required = false, value_type = Option<Vec<Kind>>, example = json!([Kind::DocumentDeletion, "*"]))]
     pub types: OptionStarOrList<Kind>,
+    /// Permits to filter tasks by their status. By default, when `statuses` query parameter is not set, all task statuses are returned. It's possible to specify several statuses by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskStatuses>)]
     #[param(required = false, value_type = Option<Vec<Status>>, example = json!([Status::Succeeded, Status::Failed, Status::Canceled, "*"]))]
     pub statuses: OptionStarOrList<Status>,
+    /// Permits to filter tasks by their related index. By default, when `indexUids` query parameter is not set, the tasks of all the indexes are returned. It is possible to specify several indexes by separating them with the `,` character.
     #[deserr(default, error = DeserrQueryParamError<InvalidIndexUid>)]
     #[param(required = false, value_type = Option<Vec<String>>, example = json!(["movies", "theater", "*"]))]
     pub index_uids: OptionStarOrList<IndexUid>,
 
+    /// Permits to filter tasks based on their enqueuedAt time. Matches tasks enqueued after the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterEnqueuedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_enqueued_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their enqueuedAt time. Matches tasks enqueued before the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeEnqueuedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_enqueued_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their startedAt time. Matches tasks started after the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterStartedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_started_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their startedAt time. Matches tasks started before the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeStartedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_started_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their finishedAt time. Matches tasks finished after the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskAfterFinishedAt>, try_from(OptionStarOr<String>) = deserialize_date_after -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub after_finished_at: OptionStarOr<OffsetDateTime>,
+    /// Permits to filter tasks based on their finishedAt time. Matches tasks finished before the given date. Supports RFC 3339 date format.
     #[deserr(default, error = DeserrQueryParamError<InvalidTaskBeforeFinishedAt>, try_from(OptionStarOr<String>) = deserialize_date_before -> InvalidTaskDateError)]
     #[param(required = false, value_type = Option<String>, example = json!(["2024-08-08T16:37:09.971Z", "*"]))]
     pub before_finished_at: OptionStarOr<OffsetDateTime>,
@@ -215,15 +235,34 @@ impl TaskDeletionOrCancelationQuery {
     post,
     path = "/cancel",
     tag = "Tasks",
+    security(("Bearer" = ["tasks.cancel", "tasks.*", "*"])),
     params(TaskDeletionOrCancelationQuery),
     responses(
-        (status = 200, description = "Task successfully enqueued", body = SummarizedTaskView, content_type = "application/json", example = json!({
-          "taskUid": 147,
-          "indexUid": null,
-          "status": "enqueued",
-          "type": "taskDeletion",
-          "enqueuedAt": "2024-08-08T17:05:55.791772Z"
-        }))
+        (status = 200, description = "Task successfully enqueued", body = SummarizedTaskView, content_type = "application/json", example = json!(
+            {
+                "taskUid": 147,
+                "indexUid": null,
+                "status": "enqueued",
+                "type": "taskCancelation",
+                "enqueuedAt": "2024-08-08T17:05:55.791772Z"
+            }
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
+        (status = 404, description = "The task uid does not exists", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "Task :taskUid not found.",
+                "code": "task_not_found",
+                "type": "invalid_request",
+                "link": "https://docs.meilisearch.com/errors/#task_not_found"
+            }
+        ))
     )
 )]
 async fn cancel_tasks(
@@ -284,15 +323,34 @@ async fn cancel_tasks(
     delete,
     path = "",
     tag = "Tasks",
+    security(("Bearer" = ["tasks.delete", "tasks.*", "*"])),
     params(TaskDeletionOrCancelationQuery),
     responses(
-        (status = 200, description = "Task successfully enqueued", body = SummarizedTaskView, content_type = "application/json", example = json!({
-          "taskUid": 147,
-          "indexUid": null,
-          "status": "enqueued",
-          "type": "taskDeletion",
-          "enqueuedAt": "2024-08-08T17:05:55.791772Z"
-        }))
+        (status = 200, description = "Task successfully enqueued", body = SummarizedTaskView, content_type = "application/json", example = json!(
+            {
+                "taskUid": 147,
+                "indexUid": null,
+                "status": "enqueued",
+                "type": "taskDeletion",
+                "enqueuedAt": "2024-08-08T17:05:55.791772Z"
+            }
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
+        (status = 404, description = "The task uid does not exists", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "Task :taskUid not found.",
+                "code": "task_not_found",
+                "type": "invalid_request",
+                "link": "https://docs.meilisearch.com/errors/#task_not_found"
+            }
+        ))
     )
 )]
 async fn delete_tasks(
@@ -368,33 +426,43 @@ pub struct AllTasks {
     security(("Bearer" = ["tasks.get", "tasks.*", "*"])),
     params(TasksFilterQuery),
     responses(
-        (status = 200, description = "Get all tasks", body = AllTasks, content_type = "application/json", example = json!({
-          "results": [
+        (status = 200, description = "Get all tasks", body = AllTasks, content_type = "application/json", example = json!(
             {
-              "uid": 144,
-              "indexUid": "mieli",
-              "status": "succeeded",
-              "type": "settingsUpdate",
-              "canceledBy": null,
-              "details": {
-                "settings": {
-                  "filterableAttributes": [
-                    "play_count"
-                  ]
-                }
-              },
-              "error": null,
-              "duration": "PT0.009330S",
-              "enqueuedAt": "2024-08-08T09:01:13.348471Z",
-              "startedAt": "2024-08-08T09:01:13.349442Z",
-              "finishedAt": "2024-08-08T09:01:13.358772Z"
+                "results": [
+                    {
+                        "uid": 144,
+                        "indexUid": "mieli",
+                        "status": "succeeded",
+                        "type": "settingsUpdate",
+                        "canceledBy": null,
+                        "details": {
+                            "settings": {
+                                "filterableAttributes": [
+                                    "play_count"
+                                ]
+                            }
+                        },
+                        "error": null,
+                        "duration": "PT0.009330S",
+                        "enqueuedAt": "2024-08-08T09:01:13.348471Z",
+                        "startedAt": "2024-08-08T09:01:13.349442Z",
+                        "finishedAt": "2024-08-08T09:01:13.358772Z"
+                    }
+              ],
+              "total": 1,
+              "limit": 1,
+              "from": 144,
+              "next": null
             }
-          ],
-          "total": 1,
-          "limit": 1,
-          "from": 144,
-          "next": null
-        }))
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
     )
 )]
 async fn get_tasks(
