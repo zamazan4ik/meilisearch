@@ -247,6 +247,14 @@ impl TaskDeletionOrCancelationQuery {
                 "enqueuedAt": "2024-08-08T17:05:55.791772Z"
             }
         )),
+        (status = 400, description = "A filter is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "Query parameters to filter the tasks to cancel are missing. Available query parameters are: `uids`, `indexUids`, `statuses`, `types`, `canceledBy`, `beforeEnqueuedAt`, `afterEnqueuedAt`, `beforeStartedAt`, `afterStartedAt`, `beforeFinishedAt`, `afterFinishedAt`.",
+                "code": "missing_task_filters",
+                "type": "invalid_request",
+                "link": "https://docs.meilisearch.com/errors#missing_task_filters"
+            }
+        )),
         (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
             {
                 "message": "The Authorization header is missing. It must use the bearer authorization method.",
@@ -333,6 +341,14 @@ async fn cancel_tasks(
                 "status": "enqueued",
                 "type": "taskDeletion",
                 "enqueuedAt": "2024-08-08T17:05:55.791772Z"
+            }
+        )),
+        (status = 400, description = "A filter is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "Query parameters to filter the tasks to delete are missing. Available query parameters are: `uids`, `indexUids`, `statuses`, `types`, `canceledBy`, `beforeEnqueuedAt`, `afterEnqueuedAt`, `beforeStartedAt`, `afterStartedAt`, `beforeFinishedAt`, `afterFinishedAt`.",
+                "code": "missing_task_filters",
+                "type": "invalid_request",
+                "link": "https://docs.meilisearch.com/errors#missing_task_filters"
             }
         )),
         (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
