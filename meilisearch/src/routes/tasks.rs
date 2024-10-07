@@ -5,7 +5,7 @@ use deserr::Deserr;
 use index_scheduler::{IndexScheduler, Query, TaskId};
 use meilisearch_types::deserr::query_params::Param;
 use meilisearch_types::deserr::DeserrQueryParamError;
-use meilisearch_types::error::deserr_codes::*;
+use meilisearch_types::error::{deserr_codes::*, Code, ErrorType};
 use meilisearch_types::error::{InvalidTaskDateError, ResponseError};
 use meilisearch_types::index_uid::IndexUid;
 use meilisearch_types::settings::{
@@ -43,7 +43,7 @@ const DEFAULT_LIMIT: u32 = 20;
         
     )),
     modifiers(&OpenApiAuth),
-    components(schemas(AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings))
+    components(schemas(Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
 )]
 pub struct TaskApi;
 
@@ -404,6 +404,7 @@ async fn delete_tasks(
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct AllTasks {
+    /// The list of tasks that matched the filter.
     results: Vec<TaskView>,
     /// Total number of browsable results using offset/limit parameters for the given resource.
     total: u64,

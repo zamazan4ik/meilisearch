@@ -15,11 +15,17 @@ use utoipa::ToSchema;
 pub struct ResponseError {
     #[serde(skip)]
     pub code: StatusCode,
+    /// The error message.
     pub message: String,
+    /// The error code.
+    #[schema(value_type = Code)]
     #[serde(rename = "code")]
     error_code: String,
+    /// The error type.
+    #[schema(value_type = ErrorType)]
     #[serde(rename = "type")]
     error_type: String,
+    /// A link to the documentation about this specific error.
     #[serde(rename = "link")]
     error_link: String,
 }
@@ -99,7 +105,9 @@ pub trait ErrorCode {
 }
 
 #[allow(clippy::enum_variant_names)]
-enum ErrorType {
+#[derive(ToSchema)]
+#[schema(rename_all = "snake_case")]
+pub enum ErrorType {
     Internal,
     InvalidRequest,
     Auth,
@@ -131,7 +139,8 @@ impl fmt::Display for ErrorType {
 /// `MyErrorCode::default().error_code()`.
 macro_rules! make_error_codes {
     ($($code_ident:ident, $err_type:ident, $status:ident);*) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, ToSchema)]
+        #[schema(rename_all = "snake_case")]
         pub enum Code {
             $($code_ident),*
         }

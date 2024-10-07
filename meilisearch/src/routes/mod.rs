@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use tracing::debug;
 use utoipa::OpenApi;
+use utoipa::ToSchema;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
@@ -108,14 +109,19 @@ pub fn is_dry_run(req: &HttpRequest, opt: &Opt) -> Result<bool, ResponseError> {
         .map_or(false, |s| s.to_lowercase() == "true"))
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SummarizedTaskView {
+    /// The task unique identifier.
     task_uid: TaskId,
+    /// The index affected by this task. May be `null` if the task is not linked to any index.
     index_uid: Option<String>,
+    /// The status of the task.
     status: Status,
+    /// The type of the task.
     #[serde(rename = "type")]
     kind: Kind,
+    /// The date on which the task was enqueued.
     #[serde(serialize_with = "time::serde::rfc3339::serialize")]
     enqueued_at: OffsetDateTime,
 }
