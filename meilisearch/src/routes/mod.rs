@@ -47,8 +47,9 @@ pub mod tasks;
 #[derive(OpenApi)]
 #[openapi(
     nest((path = "/tasks", api = tasks::TaskApi) ),
+    paths(get_health, get_version),
     modifiers(&OpenApiAuth),
-    components(schemas(Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
+    components(schemas(HealthStatus, HealthResponse, VersionResponse, Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
 )]
 pub struct MeilisearchApi;
 
@@ -372,14 +373,43 @@ pub fn create_all_stats(
     Ok(stats)
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 struct VersionResponse {
+    /// The commit used to compile this build of Meilisearch.
     commit_sha: String,
+    /// The date of this build.
     commit_date: String,
+    /// The version of Meilisearch.
     pkg_version: String,
 }
 
+/// Get version
+///
+/// Current version of Meilisearch.
+#[utoipa::path(
+    get,
+    path = "/version",
+    tag = "Version",
+    security(("Bearer" = ["version", "*"])),
+    responses(
+        (status = 200, description = "Instance is healthy", body = VersionResponse, content_type = "application/json", example = json!(
+            {
+                "commitSha": "b46889b5f0f2f8b91438a08a358ba8f05fc09fc1",
+                "commitDate": "2021-07-08",
+                "pkgVersion": "0.23.0"
+            }
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
+    )
+)]
 async fn get_version(
     _index_scheduler: GuardedData<ActionPolicy<{ actions::VERSION }>, Data<IndexScheduler>>,
 ) -> HttpResponse {
@@ -399,6 +429,35 @@ async fn get_version(
     })
 }
 
+#[derive(Default, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+struct HealthResponse {
+    /// The status of the instance.
+    status: HealthStatus,
+}
+
+#[derive(Default, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+enum HealthStatus {
+    #[default]
+    Available,
+}
+
+/// Get Health
+///
+/// The health check endpoint enables you to periodically test the health of your Meilisearch instance.
+#[utoipa::path(
+    get,
+    path = "/health",
+    tag = "Health",
+    responses(
+        (status = 200, description = "Instance is healthy", body = HealthResponse, content_type = "application/json", example = json!(
+            {
+                "status": "available"
+            }
+        )),
+    )
+)]
 pub async fn get_health(
     index_scheduler: Data<IndexScheduler>,
     auth_controller: Data<AuthController>,
@@ -408,5 +467,5 @@ pub async fn get_health(
     index_scheduler.health().unwrap();
     auth_controller.health().unwrap();
 
-    Ok(HttpResponse::Ok().json(serde_json::json!({ "status": "available" })))
+    Ok(HttpResponse::Ok().json(&HealthResponse::default()))
 }
