@@ -27,6 +27,10 @@ use utoipa::ToSchema;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
+use self::indexes::IndexStats;
+use self::logs::GetLogs;
+use self::logs::LogMode;
+use self::logs::UpdateStderrLogs;
 use self::open_api_utils::OpenApiAuth;
 use self::tasks::AllTasks;
 
@@ -46,10 +50,16 @@ pub mod tasks;
 
 #[derive(OpenApi)]
 #[openapi(
-    nest((path = "/tasks", api = tasks::TaskApi) ),
-    paths(get_health, get_version),
+    nest(
+        (path = "/tasks", api = tasks::TaskApi),
+        (path = "/snapshots", api = snapshot::SnapshotApi),
+        (path = "/dumps", api = dump::DumpApi),
+        (path = "/metrics", api = metrics::MetricApi),
+        (path = "/logs", api = logs::LogsApi),
+    ),
+    paths(get_health, get_version, get_stats),
     modifiers(&OpenApiAuth),
-    components(schemas(HealthStatus, HealthResponse, VersionResponse, Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
+    components(schemas(UpdateStderrLogs, LogMode, GetLogs, IndexStats, Stats, HealthStatus, HealthResponse, VersionResponse, Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
 )]
 pub struct MeilisearchApi;
 
@@ -313,17 +323,56 @@ pub async fn running() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({ "status": "Meilisearch is running" }))
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Stats {
+    /// The size of the database, in bytes.
     pub database_size: u64,
     #[serde(skip)]
     pub used_database_size: u64,
+    /// The date of the last update in the RFC 3339 formats. Can be `null` if no update has ever been processed.
     #[serde(serialize_with = "time::serde::rfc3339::option::serialize")]
     pub last_update: Option<OffsetDateTime>,
+    /// The stats of every individual index your API key lets you access.
+    #[schema(value_type = HashMap<String, indexes::IndexStats>)]
     pub indexes: BTreeMap<String, indexes::IndexStats>,
 }
 
+/// Get stats of all indexes.
+///
+/// Get stats of all indexes.
+#[utoipa::path(
+    get,
+    path = "/stats",
+    tag = "Stats",
+    security(("Bearer" = ["stats.get", "stats.*", "*"])),
+    responses(
+        (status = 200, description = "The stats of the instance", body = Stats, content_type = "application/json", example = json!(
+            {
+                "databaseSize": 567,
+                "lastUpdate": "2019-11-20T09:40:33.711324Z",
+                "indexes": {
+                    "movies": {
+                        "numberOfDocuments": 10,
+                        "isIndexing": true,
+                        "fieldDistribution": {
+                            "genre": 10,
+                            "author": 9
+                        }
+                    }
+                }
+            }
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
+    )
+)]
 async fn get_stats(
     index_scheduler: GuardedData<ActionPolicy<{ actions::STATS_GET }>, Data<IndexScheduler>>,
     auth_controller: GuardedData<ActionPolicy<{ actions::STATS_GET }>, Data<AuthController>>,

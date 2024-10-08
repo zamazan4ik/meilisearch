@@ -16,6 +16,7 @@ use serde::Serialize;
 use serde_json::json;
 use time::OffsetDateTime;
 use tracing::debug;
+use utoipa::ToSchema;
 
 use super::{get_task_id, Pagination, SummarizedTaskView, PAGINATION_DEFAULT_LIMIT};
 use crate::analytics::Analytics;
@@ -247,12 +248,12 @@ pub async fn delete_index(
 }
 
 /// Stats of an `Index`, as known to the `stats` route.
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexStats {
     /// Number of documents in the index
     pub number_of_documents: u64,
-    /// Whether the index is currently performing indexation, according to the scheduler.
+    /// Whether or not the index is currently ingesting document
     pub is_indexing: bool,
     /// Association of every field name with the number of times it occurs in the documents.
     pub field_distribution: FieldDistribution,
