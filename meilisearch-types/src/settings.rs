@@ -40,10 +40,10 @@ where
     .serialize(s)
 }
 
-#[derive(Clone, Default, Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, Serialize, PartialEq, Eq, ToSchema)]
 pub struct Checked;
 
-#[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct Unchecked;
 
 impl<E> Deserr<E> for Unchecked
@@ -236,6 +236,7 @@ pub struct Settings<T> {
     /// Embedder required for performing meaning-based search queries.
     #[serde(default, skip_serializing_if = "Setting::is_not_set")]
     #[deserr(default, error = DeserrJsonError<InvalidSettingsEmbedders>)]
+    #[schema(value_type = String)] // TODO: TAMO
     pub embedders: Setting<BTreeMap<String, Setting<milli::vector::settings::EmbeddingSettings>>>,
     /// Maximum duration of a search query.
     #[serde(default, skip_serializing_if = "Setting::is_not_set")]
@@ -244,6 +245,7 @@ pub struct Settings<T> {
     pub search_cutoff_ms: Setting<u64>,
     #[serde(default, skip_serializing_if = "Setting::is_not_set")]
     #[deserr(default, error = DeserrJsonError<InvalidSettingsLocalizedAttributes>)]
+    #[schema(value_type = Option<Vec<LocalizedAttributesRuleView>>, example = json!(50))]
     pub localized_attributes: Setting<Vec<LocalizedAttributesRuleView>>,
 
     #[serde(skip)]
@@ -908,7 +910,7 @@ impl From<ProximityPrecisionView> for ProximityPrecision {
     }
 }
 
-#[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq)]
 pub struct WildcardSetting(Setting<Vec<String>>);
 
 impl From<Setting<Vec<String>>> for WildcardSetting {

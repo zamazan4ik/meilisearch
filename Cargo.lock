@@ -3608,6 +3608,7 @@ dependencies = [
  "tracing",
  "ureq",
  "url",
+ "utoipa",
  "uuid",
 ]
 
@@ -5847,9 +5848,9 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "utoipa"
-version = "5.0.0-beta.0"
+version = "5.0.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86fac56d240b49c629b9083c932ac20a23d926937e67c21ba209f836e2983d4f"
+checksum = "3cf66139459b75afa33caddb62bb2afee3838923b630b9e0ef38c369e543382f"
 dependencies = [
  "indexmap",
  "serde",
@@ -5859,9 +5860,9 @@ dependencies = [
 
 [[package]]
 name = "utoipa-gen"
-version = "5.0.0-beta.0"
+version = "5.0.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31d88270777931b8133b119c953062bd41665bb8507841f7d433f46d2765e9d4"
+checksum = "7c136da726bb82a527afa1fdf3f4619eaf104e2982f071f25239cef1c67c79eb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5872,9 +5873,9 @@ dependencies = [
 
 [[package]]
 name = "utoipa-rapidoc"
-version = "4.0.1-beta.0"
+version = "4.0.1-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c836d406d590721b89f572cb0379479fcfbe27f31ca65c0775265a1b9026dd34"
+checksum = "a4d3324d5874fb734762214827dd30b47aa78510d12abab674a97f6d7c53688f"
 dependencies = [
  "actix-web",
  "serde",
@@ -5884,9 +5885,9 @@ dependencies = [
 
 [[package]]
 name = "utoipa-scalar"
-version = "0.2.0-beta.0"
+version = "0.2.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc86065a210b8540e46d15e0844765d1d14eec7fd6221c2b0de8f6edde990648"
+checksum = "7dc122c11f9642b20b3be88b60c1a3672319811f139698ac6999e72992ac7c7e"
 dependencies = [
  "actix-web",
  "serde",

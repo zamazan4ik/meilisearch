@@ -256,6 +256,7 @@ pub struct IndexStats {
     /// Whether or not the index is currently ingesting document
     pub is_indexing: bool,
     /// Association of every field name with the number of times it occurs in the documents.
+    #[schema(value_type = HashMap<String, u64>)]
     pub field_distribution: FieldDistribution,
 }
 

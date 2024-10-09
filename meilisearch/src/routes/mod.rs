@@ -29,7 +29,6 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
 use self::api_key::KeyView;
-use self::api_key::ListApiKeys;
 use self::indexes::IndexStats;
 use self::logs::GetLogs;
 use self::logs::LogMode;
@@ -63,7 +62,7 @@ pub mod tasks;
     ),
     paths(get_health, get_version, get_stats),
     modifiers(&OpenApiAuth),
-    components(schemas(PaginationView<KeyView>, KeyView, Action, CreateApiKey, UpdateStderrLogs, LogMode, GetLogs, IndexStats, Stats, HealthStatus, HealthResponse, VersionResponse, Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
+    components(schemas(KeyView, Action, CreateApiKey, UpdateStderrLogs, LogMode, GetLogs, IndexStats, Stats, HealthStatus, HealthResponse, VersionResponse, Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
 )]
 pub struct MeilisearchApi;
 
@@ -141,6 +140,7 @@ pub fn is_dry_run(req: &HttpRequest, opt: &Opt) -> Result<bool, ResponseError> {
 #[serde(rename_all = "camelCase")]
 pub struct SummarizedTaskView {
     /// The task unique identifier.
+    #[schema(value_type = u32)]
     task_uid: TaskId,
     /// The index affected by this task. May be `null` if the task is not linked to any index.
     index_uid: Option<String>,
@@ -171,8 +171,8 @@ pub struct Pagination {
     pub limit: usize,
 }
 
-#[derive(Debug, Clone, Serialize, ToSchema)]
-#[schema(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PaginationView<T> {
     pub results: Vec<T>,
     pub offset: usize,

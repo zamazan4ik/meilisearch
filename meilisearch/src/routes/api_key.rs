@@ -16,7 +16,7 @@ use time::OffsetDateTime;
 use utoipa::{IntoParams, OpenApi, ToSchema};
 use uuid::Uuid;
 
-use super::PAGINATION_DEFAULT_LIMIT;
+use super::{PaginationView, PAGINATION_DEFAULT_LIMIT};
 use crate::extractors::authentication::policies::*;
 use crate::extractors::authentication::GuardedData;
 use crate::extractors::sequential_extractor::SeqHandler;
@@ -134,6 +134,7 @@ impl ListApiKeys {
 /// Get API Keys
 ///
 /// List all API Keys
+/// TODO: Tamo fix the return type
 #[utoipa::path(
     get,
     path = "/",
@@ -141,7 +142,7 @@ impl ListApiKeys {
     security(("Bearer" = ["keys.get", "keys.*", "*"])),
     params(ListApiKeys),
     responses(
-        (status = 202, description = "List of keys", body = PaginationView<KeyView>, content_type = "application/json", example = json!(
+        (status = 202, description = "List of keys", body = serde_json::Value, content_type = "application/json", example = json!(
             {
                 "results": [
                     {
