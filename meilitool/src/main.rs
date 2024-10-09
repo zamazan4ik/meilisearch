@@ -64,7 +64,10 @@ enum Command {
         skip_enqueued_tasks: bool,
     },
 
-    /// Exports the documents of an index from the Meilisearch database to stdout.
+    /// Exports the documents of an index in NDJSON format from a Meilisearch index to stdout.
+    ///
+    /// This command can be executed on a running Meilisearch database. However, please note that
+    /// it will maintain a read-only transaction for the duration of the extraction process.
     ExportDocuments {
         /// The index name to export the documents from.
         #[arg(long)]
