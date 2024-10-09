@@ -10,6 +10,7 @@ use index_scheduler::IndexScheduler;
 use meilisearch_auth::AuthController;
 use meilisearch_types::error::ErrorType;
 use meilisearch_types::error::{Code, ResponseError};
+use meilisearch_types::keys::CreateApiKey;
 use meilisearch_types::settings::Checked;
 use meilisearch_types::settings::FacetingSettings;
 use meilisearch_types::settings::MinWordSizeTyposSetting;
@@ -27,6 +28,8 @@ use utoipa::ToSchema;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
+use self::api_key::KeyView;
+use self::api_key::ListApiKeys;
 use self::indexes::IndexStats;
 use self::logs::GetLogs;
 use self::logs::LogMode;
@@ -54,32 +57,33 @@ pub mod tasks;
         (path = "/tasks", api = tasks::TaskApi),
         (path = "/snapshots", api = snapshot::SnapshotApi),
         (path = "/dumps", api = dump::DumpApi),
+        (path = "/keys", api = api_key::ApiKeyApi),
         (path = "/metrics", api = metrics::MetricApi),
         (path = "/logs", api = logs::LogsApi),
     ),
     paths(get_health, get_version, get_stats),
     modifiers(&OpenApiAuth),
-    components(schemas(UpdateStderrLogs, LogMode, GetLogs, IndexStats, Stats, HealthStatus, HealthResponse, VersionResponse, Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
+    components(schemas(PaginationView<KeyView>, KeyView, Action, CreateApiKey, UpdateStderrLogs, LogMode, GetLogs, IndexStats, Stats, HealthStatus, HealthResponse, VersionResponse, Code, ErrorType, AllTasks, TaskView, Status, DetailsView, ResponseError, Settings<Unchecked>, Settings<Checked>, TypoSettings, MinWordSizeTyposSetting, FacetingSettings, PaginationSettings, SummarizedTaskView, Kind))
 )]
 pub struct MeilisearchApi;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     let openapi = MeilisearchApi::openapi();
 
-    cfg.service(web::scope("/tasks").configure(tasks::configure))
-        .service(Scalar::with_url("/scalar", openapi.clone()))
-        .service(RapiDoc::with_openapi("/api-docs/openapi.json", openapi).path("/rapidoc"))
-        .service(web::resource("/health").route(web::get().to(get_health)))
-        .service(web::scope("/logs").configure(logs::configure))
+    cfg.service(web::scope("/tasks").configure(tasks::configure)) // done
+        .service(Scalar::with_url("/scalar", openapi.clone())) // done
+        .service(RapiDoc::with_openapi("/api-docs/openapi.json", openapi).path("/rapidoc")) // done
+        .service(web::resource("/health").route(web::get().to(get_health))) // done
+        .service(web::scope("/logs").configure(logs::configure)) // done
         .service(web::scope("/keys").configure(api_key::configure))
-        .service(web::scope("/dumps").configure(dump::configure))
-        .service(web::scope("/snapshots").configure(snapshot::configure))
-        .service(web::resource("/stats").route(web::get().to(get_stats)))
-        .service(web::resource("/version").route(web::get().to(get_version)))
+        .service(web::scope("/dumps").configure(dump::configure)) // done
+        .service(web::scope("/snapshots").configure(snapshot::configure)) // done
+        .service(web::resource("/stats").route(web::get().to(get_stats))) // done
+        .service(web::resource("/version").route(web::get().to(get_version))) // done
         .service(web::scope("/indexes").configure(indexes::configure))
         .service(web::scope("/multi-search").configure(multi_search::configure))
         .service(web::scope("/swap-indexes").configure(swap_indexes::configure))
-        .service(web::scope("/metrics").configure(metrics::configure))
+        .service(web::scope("/metrics").configure(metrics::configure)) // done
         .service(web::scope("/experimental-features").configure(features::configure));
 }
 
@@ -167,7 +171,8 @@ pub struct Pagination {
     pub limit: usize,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
+#[schema(rename_all = "camelCase")]
 pub struct PaginationView<T> {
     pub results: Vec<T>,
     pub offset: usize,
