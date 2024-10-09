@@ -99,12 +99,15 @@ fn deny_immutable_fields_api_key(
     }
 }
 
-#[derive(Debug, Deserr)]
+#[derive(Debug, Deserr, ToSchema)]
 #[deserr(error = DeserrJsonError, rename_all = camelCase, deny_unknown_fields = deny_immutable_fields_api_key)]
+#[schema(rename_all = "camelCase")]
 pub struct PatchApiKey {
     #[deserr(default, error = DeserrJsonError<InvalidApiKeyDescription>)]
+    #[schema(value_type = Option<String>, example = "This key is used to update documents in the products index")]
     pub description: Setting<String>,
     #[deserr(default, error = DeserrJsonError<InvalidApiKeyName>)]
+    #[schema(value_type = Option<String>, example = "Indexing Products API key")]
     pub name: Setting<String>,
 }
 

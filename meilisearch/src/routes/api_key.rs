@@ -16,7 +16,7 @@ use time::OffsetDateTime;
 use utoipa::{IntoParams, OpenApi, ToSchema};
 use uuid::Uuid;
 
-use super::{PaginationView, PAGINATION_DEFAULT_LIMIT};
+use super::PAGINATION_DEFAULT_LIMIT;
 use crate::extractors::authentication::policies::*;
 use crate::extractors::authentication::GuardedData;
 use crate::extractors::sequential_extractor::SeqHandler;
@@ -24,7 +24,7 @@ use crate::routes::Pagination;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(create_api_key, list_api_keys),
+    paths(create_api_key, list_api_keys, get_api_key, patch_api_key, delete_api_key),
     tags((
         name = "Keys",
         description = "Manage API `keys` for a Meilisearch instance. Each key has a given set of permissions.
@@ -202,6 +202,52 @@ pub async fn list_api_keys(
     Ok(HttpResponse::Ok().json(page_view))
 }
 
+
+/// Get an API Key
+///
+/// Get an API key from its `uid` or its `key` field.
+#[utoipa::path(
+    get,
+    path = "/{key}",
+    tag = "Keys",
+    security(("Bearer" = ["keys.get", "keys.*", "*"])),
+    params(("uidOrKey" = String, Path, format = Password, example = "7b198a7f-52a0-4188-8762-9ad93cd608b2", description = "The `uid` or `key` field of an existing API key", nullable = false)),
+    responses(
+        (status = 200, description = "The key is returned", body = KeyView, content_type = "application/json", example = json!(
+            {
+                "uid": "01b4bc42-eb33-4041-b481-254d00cce834",
+                "key": "d0552b41536279a0ad88bd595327b96f01176a60c2243e906c52ac02375f9bc4",
+                "name": "An API Key",
+                "description": null,
+                "actions": [
+                    "documents.add"
+                ],
+                "indexes": [
+                    "movies"
+                ],
+                "expiresAt": "2022-11-12T10:00:00Z",
+                "createdAt": "2021-11-12T10:00:00Z",
+                "updatedAt": "2021-11-12T10:00:00Z"
+            }
+        )),
+        (status = 401, description = "The route has been hit on an unprotected instance", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "Meilisearch is running without a master key. To access this API endpoint, you must have set a master key at launch.",
+                "code": "missing_master_key",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_master_key"
+            }
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
+    )
+)]
 pub async fn get_api_key(
     auth_controller: GuardedData<ActionPolicy<{ actions::KEYS_GET }>, Data<AuthController>>,
     path: web::Path<AuthParam>,
@@ -221,6 +267,55 @@ pub async fn get_api_key(
     Ok(HttpResponse::Ok().json(res))
 }
 
+
+/// Update an API Key
+///
+/// Update an API key from its `uid` or its `key` field.
+/// Only the `name` and `description` of the api key can be updated.
+/// If there is an issue with the `key` or `uid` of a key, then you must recreate one from scratch.
+#[utoipa::path(
+    patch,
+    path = "/{key}",
+    tag = "Keys",
+    security(("Bearer" = ["keys.update", "keys.*", "*"])),
+    params(("uidOrKey" = String, Path, format = Password, example = "7b198a7f-52a0-4188-8762-9ad93cd608b2", description = "The `uid` or `key` field of an existing API key", nullable = false)),
+    request_body = PatchApiKey,
+    responses(
+        (status = 200, description = "The key have been updated", body = KeyView, content_type = "application/json", example = json!(
+            {
+                "uid": "01b4bc42-eb33-4041-b481-254d00cce834",
+                "key": "d0552b41536279a0ad88bd595327b96f01176a60c2243e906c52ac02375f9bc4",
+                "name": "An API Key",
+                "description": null,
+                "actions": [
+                    "documents.add"
+                ],
+                "indexes": [
+                    "movies"
+                ],
+                "expiresAt": "2022-11-12T10:00:00Z",
+                "createdAt": "2021-11-12T10:00:00Z",
+                "updatedAt": "2021-11-12T10:00:00Z"
+            }
+        )),
+        (status = 401, description = "The route has been hit on an unprotected instance", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "Meilisearch is running without a master key. To access this API endpoint, you must have set a master key at launch.",
+                "code": "missing_master_key",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_master_key"
+            }
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
+    )
+)]
 pub async fn patch_api_key(
     auth_controller: GuardedData<ActionPolicy<{ actions::KEYS_UPDATE }>, Data<AuthController>>,
     body: AwebJson<PatchApiKey, DeserrJsonError>,
@@ -241,6 +336,39 @@ pub async fn patch_api_key(
     Ok(HttpResponse::Ok().json(res))
 }
 
+
+
+/// Update an API Key
+///
+/// Update an API key from its `uid` or its `key` field.
+/// Only the `name` and `description` of the api key can be updated.
+/// If there is an issue with the `key` or `uid` of a key, then you must recreate one from scratch.
+#[utoipa::path(
+    delete,
+    path = "/{key}",
+    tag = "Keys",
+    security(("Bearer" = ["keys.delete", "keys.*", "*"])),
+    params(("uidOrKey" = String, Path, format = Password, example = "7b198a7f-52a0-4188-8762-9ad93cd608b2", description = "The `uid` or `key` field of an existing API key", nullable = false)),
+    responses(
+        (status = NO_CONTENT, description = "The key have been removed"),
+        (status = 401, description = "The route has been hit on an unprotected instance", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "Meilisearch is running without a master key. To access this API endpoint, you must have set a master key at launch.",
+                "code": "missing_master_key",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_master_key"
+            }
+        )),
+        (status = 401, description = "The authorization header is missing", body = ResponseError, content_type = "application/json", example = json!(
+            {
+                "message": "The Authorization header is missing. It must use the bearer authorization method.",
+                "code": "missing_authorization_header",
+                "type": "auth",
+                "link": "https://docs.meilisearch.com/errors#missing_authorization_header"
+            }
+        )),
+    )
+)]
 pub async fn delete_api_key(
     auth_controller: GuardedData<ActionPolicy<{ actions::KEYS_DELETE }>, Data<AuthController>>,
     path: web::Path<AuthParam>,
@@ -281,9 +409,11 @@ pub(super) struct KeyView {
     #[serde(serialize_with = "time::serde::rfc3339::option::serialize")]
     expires_at: Option<OffsetDateTime>,
     /// The date of creation of this API Key.
+    #[schema(read_only)]
     #[serde(serialize_with = "time::serde::rfc3339::serialize")]
     created_at: OffsetDateTime,
     /// The date of the last update made on this key.
+    #[schema(read_only)]
     #[serde(serialize_with = "time::serde::rfc3339::serialize")]
     updated_at: OffsetDateTime,
 }
