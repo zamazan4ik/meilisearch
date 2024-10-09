@@ -75,6 +75,10 @@ enum Command {
         /// The index name to export the documents from.
         #[arg(long)]
         index_name: String,
+
+        /// Do not export vectors with the documents.
+        #[arg(long)]
+        ignore_vectors: bool,
     },
 
     /// Attempts to upgrade from one major version to the next without a dump.
@@ -102,7 +106,9 @@ fn main() -> anyhow::Result<()> {
         Command::ExportADump { dump_dir, skip_enqueued_tasks } => {
             export_a_dump(db_path, dump_dir, skip_enqueued_tasks)
         }
-        Command::ExportDocuments { index_name } => export_documents(db_path, index_name),
+        Command::ExportDocuments { index_name, ignore_vectors } => {
+            export_documents(db_path, index_name, ignore_vectors)
+        }
         Command::OfflineUpgrade { target_version } => {
             let target_version = parse_version(&target_version).context("While parsing `--target-version`. Make sure `--target-version` is in the format MAJOR.MINOR.PATCH")?;
             OfflineUpgrade { db_path, current_version: detected_version, target_version }.upgrade()
@@ -765,7 +771,11 @@ fn export_a_dump(
     Ok(())
 }
 
-fn export_documents(db_path: PathBuf, index_name: String) -> anyhow::Result<()> {
+fn export_documents(
+    db_path: PathBuf,
+    index_name: String,
+    ignore_vectors: bool,
+) -> anyhow::Result<()> {
     let index_scheduler_path = db_path.join("tasks");
     let env = unsafe { EnvOpenOptions::new().max_dbs(100).open(&index_scheduler_path) }
         .with_context(|| format!("While trying to open {:?}", index_scheduler_path.display()))?;
@@ -792,49 +802,52 @@ fn export_documents(db_path: PathBuf, index_name: String) -> anyhow::Result<()> 
                 let (id, doc) = ret?;
                 let mut document = obkv_to_json(&all_fields, &fields_ids_map, doc)?;
 
-                'inject_vectors: {
-                    let embeddings = index.embeddings(&rtxn, id)?;
+                if !ignore_vectors {
+                    'inject_vectors: {
+                        let embeddings = index.embeddings(&rtxn, id)?;
 
-                    if embeddings.is_empty() {
-                        break 'inject_vectors;
-                    }
+                        if embeddings.is_empty() {
+                            break 'inject_vectors;
+                        }
 
-                    let vectors = document
-                        .entry(RESERVED_VECTORS_FIELD_NAME)
-                        .or_insert(Object(Default::default()));
+                        let vectors = document
+                            .entry(RESERVED_VECTORS_FIELD_NAME)
+                            .or_insert(Object(Default::default()));
 
-                    let Object(vectors) = vectors else {
-                        return Err(meilisearch_types::milli::Error::UserError(
-                            meilisearch_types::milli::UserError::InvalidVectorsMapType {
-                                document_id: {
-                                    if let Ok(Some(Ok(index))) = index
-                                        .external_id_of(&rtxn, std::iter::once(id))
-                                        .map(|it| it.into_iter().next())
-                                    {
-                                        index
-                                    } else {
-                                        format!("internal docid={id}")
-                                    }
+                        let Object(vectors) = vectors else {
+                            return Err(meilisearch_types::milli::Error::UserError(
+                                meilisearch_types::milli::UserError::InvalidVectorsMapType {
+                                    document_id: {
+                                        if let Ok(Some(Ok(index))) = index
+                                            .external_id_of(&rtxn, std::iter::once(id))
+                                            .map(|it| it.into_iter().next())
+                                        {
+                                            index
+                                        } else {
+                                            format!("internal docid={id}")
+                                        }
+                                    },
+                                    value: vectors.clone(),
                                 },
-                                value: vectors.clone(),
-                            },
-                        )
-                        .into());
-                    };
-
-                    for (embedder_name, embeddings) in embeddings {
-                        let user_provided = embedding_configs
-                            .iter()
-                            .find(|conf| conf.name == embedder_name)
-                            .is_some_and(|conf| conf.user_provided.contains(id));
-
-                        let embeddings = ExplicitVectors {
-                            embeddings: Some(VectorOrArrayOfVectors::from_array_of_vectors(
-                                embeddings,
-                            )),
-                            regenerate: !user_provided,
+                            )
+                            .into());
                         };
-                        vectors.insert(embedder_name, serde_json::to_value(embeddings).unwrap());
+
+                        for (embedder_name, embeddings) in embeddings {
+                            let user_provided = embedding_configs
+                                .iter()
+                                .find(|conf| conf.name == embedder_name)
+                                .is_some_and(|conf| conf.user_provided.contains(id));
+
+                            let embeddings = ExplicitVectors {
+                                embeddings: Some(VectorOrArrayOfVectors::from_array_of_vectors(
+                                    embeddings,
+                                )),
+                                regenerate: !user_provided,
+                            };
+                            vectors
+                                .insert(embedder_name, serde_json::to_value(embeddings).unwrap());
+                        }
                     }
                 }
 
