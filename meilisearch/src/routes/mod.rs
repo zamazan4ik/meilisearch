@@ -26,6 +26,8 @@ use tracing::debug;
 use utoipa::OpenApi;
 use utoipa::ToSchema;
 use utoipa_rapidoc::RapiDoc;
+use utoipa_redoc::Redoc;
+use utoipa_redoc::Servable;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
 use self::api_key::KeyView;
@@ -71,7 +73,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 
     cfg.service(web::scope("/tasks").configure(tasks::configure)) // done
         .service(Scalar::with_url("/scalar", openapi.clone())) // done
-        .service(RapiDoc::with_openapi("/api-docs/openapi.json", openapi).path("/rapidoc")) // done
+        .service(RapiDoc::with_openapi("/api-docs/openapi.json", openapi.clone()).path("/rapidoc")) // done
+        .service(Redoc::with_url("/redoc", openapi))
         .service(web::resource("/health").route(web::get().to(get_health))) // done
         .service(web::scope("/logs").configure(logs::configure)) // done
         .service(web::scope("/keys").configure(api_key::configure))
